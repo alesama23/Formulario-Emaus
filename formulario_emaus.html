@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Inscripción IV Retiro Penitenciario Emaús Hombres</title>
+    <!-- Tailwind CSS CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2pdf.js CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import Firebase modules directly
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Expose Firebase objects globally for this script to use, or use a structured approach
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            collection,
+            runTransaction
+        };
+    </script>
+    <style>
+        /* Custom styles for handwritten lines if printed */
+        .handwritten-line {
+            border-bottom: 1px dashed #9ca3af; /* Light gray dashed line */
+            padding-bottom: 2px; /* Small space below the line */
+        }
+
+        /* Adjust font to Inter for a modern look */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align to start to prevent sticking to center on scroll */
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            padding: 2rem 0; /* Vertical padding */
+        }
+
+        /* General input styling for better appearance */
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db; /* Light gray border */
+            background-color: #ffffff; /* White background */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="date"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6; /* Blue focus border */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); /* Blue glow on focus */
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+            }
+            .form-container {
+                box-shadow: none;
+                border: none;
+                width: 100%;
+                max-width: none;
+                border-radius: 0;
+                padding: 0;
+            }
+            input[type="text"],
+            input[type="email"],
+            input[type="tel"],
+            input[type="date"],
+            textarea {
+                border: none;
+                border-bottom: 1px dashed #000; /* Solid line for printing */
+                border-radius: 0;
+                box-shadow: none;
+                padding: 0;
+            }
+            .checkbox-group label {
+                display: inline-flex; /* Keep checkboxes side-by-side */
+                align-items: center;
+            }
+            .checkbox-group input[type="checkbox"] {
+                margin-right: 0.5rem; /* Space between checkbox and label */
+            }
+            .no-print, .no-pdf { /* Hide these elements during printing or PDF generation */
+                display: none !important;
+            }
+        }
+        /* Styles specific to PDF generation to hide elements */
+        .no-pdf {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container bg-white p-8 rounded-lg shadow-xl max-w-4xl w-full mx-4 sm:mx-auto border border-gray-200">
+        <!-- Header Section -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">IV Retiro Penitenciario Emaús Hombres</h1>
+            <p class="text-xl text-gray-600 mb-1">CCR 11 San Pedro de Macorís, RD</p>
+            <p class="text-xl font-semibold text-gray-700 mb-4">26, 27 y 28 DE SEPTIEMBRE DEL AÑO 2025</p>
+            <!-- Ficha Number Display -->
+            <p id="fichaNumberDisplay" class="text-lg text-gray-500 float-right">Cargando Ficha N°...</p>
+            <div class="clear-both"></div>
+        </div>
+
+        <!-- Logo Area - Centered -->
+        <div class="flex justify-center mb-8">
+            <img src="photo.jpg"
+                 onerror="this.onerror=null; this.src='https://placehold.co/200x200/cccccc/ffffff?text=Logo+Ema%C3%BAs';"
+                 alt="Logo de Emaús Penitenciario" class="w-48 h-48 object-contain rounded-full shadow-md">
+        </div>
+
+        <!-- Form Section -->
+        <form class="space-y-6">
+            <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-blue-500 pb-2 mb-6">Datos de Inscripción del Servidor</h2>
+
+            <!-- Name and Nickname -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="nombre_apellido" class="block text-sm font-medium text-gray-700 mb-1">Nombre y Apellido</label>
+                    <input type="text" id="nombre_apellido" name="nombre_apellido" class="handwritten-line" placeholder="Escribe aquí tu nombre completo" required>
+                </div>
+                <div>
+                    <label for="apodo" class="block text-sm font-medium text-gray-700 mb-1">Apodo</label>
+                    <input type="text" id="apodo" name="apodo" class="handwritten-line" placeholder="Tu apodo si tienes" required>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div>
+                <label for="direccion" class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                <input type="text" id="direccion" name="direccion" class="handwritten-line" placeholder="Calle, número, sector, ciudad" required>
+            </div>
+
+            <!-- Phones -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                    <label for="tel_casa" class="block text-sm font-medium text-gray-700 mb-1">Teléfono Casa</label>
+                    <input type="tel" id="tel_casa" name="tel_casa" class="handwritten-line" placeholder="Ej: (809) 123-4567">
+                </div>
+                <div>
+                    <label for="tel_trabajo" class="block text-sm font-medium text-gray-700 mb-1">Teléfono Trabajo</label>
+                    <input type="tel" id="tel_trabajo" name="tel_trabajo" class="handwritten-line" placeholder="Ej: (809) 987-6543">
+                </div>
+                <div>
+                    <label for="celular" class="block text-sm font-medium text-gray-700 mb-1">Celular</label>
+                    <input type="tel" id="celular" name="celular" class="handwritten-line" placeholder="Ej: (809) 555-1234" required>
+                </div>
+                <div>
+                    <label for="tel_otros" class="block text-sm font-medium text-gray-700 mb-1">Otros Teléfonos</label>
+                    <input type="tel" id="tel_otros" name="tel_otros" class="handwritten-line" placeholder="Números adicionales">
+                </div>
+            </div>
+
+            <!-- Email -->
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="email" name="email" class="handwritten-line" placeholder="tu.correo@ejemplo.com" required>
+            </div>
+
+            <!-- Birth Date and Age -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="fecha_nacimiento" class="block text-sm font-medium text-gray-700 mb-1">Fecha de Nacimiento</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="handwritten-line" required>
+                </div>
+                <div>
+                    <label for="edad" class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+                    <input type="text" id="edad" name="edad" class="handwritten-line" placeholder="Tu edad en años" required>
+                </div>
+            </div>
+
+            <!-- Civil Status -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Estado Civil</label>
+                <div class="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-y-2 checkbox-group">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="estado_civil" value="casado" class="form-checkbox text-blue-600 rounded">
+                        <span class="ml-2 text-gray-700">Casado</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="estado_civil" value="soltero" class="form-checkbox text-blue-600 rounded">
+                        <span class="ml-2 text-gray-700">Soltero</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="estado_civil" value="divorciado" class="form-checkbox text-blue-600 rounded">
+                        <span class="ml-2 text-gray-700">Divorciado</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" name="estado_civil" value="viudo" class="form-checkbox text-blue-600 rounded">
+                        <span class="ml-2 text-gray-700">Viudo</span>
+                    </label>
+                    <label class="inline-flex items-center col-span-2 sm:col-span-1">
+                        <input type="checkbox" name="estado_civil" value="otro" class="form-checkbox text-blue-600 rounded">
+                        <span class="ml-2 text-gray-700">Otro:</span>
+                        <input type="text" name="estado_civil_otro" class="ml-2 flex-grow handwritten-line border-b border-gray-400" placeholder="Especificar">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Profession -->
+            <div>
+                <label for="profesion" class="block text-sm font-medium text-gray-700 mb-1">Profesión</label>
+                <input type="text" id="profesion" name="profesion" class="handwritten-line" placeholder="Tu profesión u ocupación" required>
+            </div>
+
+            <!-- Spouse Name and Hna. Emaús -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="nombre_conyugue" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Cónyugue</label>
+                    <input type="text" id="nombre_conyugue" name="nombre_conyugue" class="handwritten-line" placeholder="Solo si estás casado(a)">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Hna. Emaús</label>
+                    <div class="mt-2 flex space-x-4 checkbox-group">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="hna_emaus" value="si" class="form-radio text-blue-600">
+                            <span class="ml-2 text-gray-700">Si</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="hna_emaus" value="no" class="form-radio text-blue-600">
+                            <span class="ml-2 text-gray-700">No</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parish, Parish Phone, and Ministerio -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="parroquia" class="block text-sm font-medium text-gray-700 mb-1">Parroquia a la que pertenece</label>
+                    <input type="text" id="parroquia" name="parroquia" class="handwritten-line" placeholder="Nombre de tu parroquia" required>
+                </div>
+                <div>
+                    <label for="tel_parroquia" class="block text-sm font-medium text-gray-700 mb-1">Teléfono de la Parroquia</label>
+                    <input type="tel" id="tel_parroquia" name="tel_parroquia" class="handwritten-line" placeholder="Teléfono de contacto de la parroquia">
+                </div>
+            </div>
+            <div>
+                <label for="ministerio" class="block text-sm font-medium text-gray-700 mb-1">Ministerio al que servirá</label>
+                <input type="text" id="ministerio" name="ministerio" class="handwritten-line" placeholder="Ej: Ministerio de Música, Eucaristía, etc." required>
+            </div>
+
+            <!-- Cost and Notes -->
+            <div class="mt-8 pt-6 border-t-2 border-blue-500">
+                <p class="text-xl font-bold text-gray-800 mb-4">Costo de la Ficha: RD$ 3,500.00</p>
+                <p class="text-sm text-gray-600 italic mb-4">
+                    <span class="font-semibold">Nota:</span> Todo Servidor debe tener un mínimo de tres visitas al Santísimo en diferentes horarios durante el retiro. Las visitas serán programadas.
+                </p>
+
+                <h3 class="text-lg font-bold text-gray-800 mb-3">Información de Pago:</h3>
+                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                    <li>
+                        <span class="font-semibold">CC 843859877</span><br>
+                        LUCAS MEJIA <br>
+                        023-0105029-6
+                    </li>
+                    <li>
+                        <span class="font-semibold">CC 1102071878</span><br>
+                        LUCAS MEJIA <br>
+                        023-0105029-6
+                    </li>
+                    <li>
+                        <span class="font-semibold">CC 32997380013</span><br>
+                        PEDRO NATERA Y/O JAIRO SOLANO <br>
+                        023-0087334-2
+                    </li>
+                </ul>
+                <p class="text-sm font-semibold text-red-600 mt-4">
+                    NOTA: ENVIAR COMPROBANTE CON TU NOMBRE.
+                </p>
+                <p class="text-base font-bold text-red-700 mt-2">
+                    FECHAS TOPE DE PAGO: 15 DE SEPTIEMBRE 2025
+                </p>
+            </div>
+        </form>
+
+        <!-- Save as PDF Button -->
+        <div class="mt-8 text-center no-print">
+            <button type="button" id="savePdfBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">
+                Guardar como PDF
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase setup and Ficha Number Logic
+        let app;
+        let db;
+        let auth;
+        let userId;
+        window.currentFichaNumber = '00'; // Default or loading state
+
+        /**
+         * Initializes Firebase and loads/increments the ficha number.
+         * Uses a Firestore transaction to ensure atomic increment for unique ficha numbers.
+         */
+        async function initializeFirebaseAndLoadFicha() {
+            const fichaNumberDisplay = document.getElementById('fichaNumberDisplay');
+            fichaNumberDisplay.textContent = 'Cargando Ficha N°...'; // Ensure loading state is visible initially
+
+            try {
+                // Ensure __firebase_config is a valid JSON string before parsing
+                const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+                const firebaseConfig = JSON.parse(rawFirebaseConfig);
+
+                // Basic validation for firebaseConfig to ensure it's not just an empty object from a failed parse
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Firebase configuration is missing or empty. Please ensure __firebase_config is properly set.");
+                }
+
+                // Initialize Firebase app if not already initialized
+                // This check is important to prevent re-initializing the app which can cause errors.
+                if (!app) {
+                    app = window.firebase.initializeApp(firebaseConfig);
+                    db = window.firebase.getFirestore(app);
+                    auth = window.firebase.getAuth(app);
+                }
+
+
+                // Sign in anonymously if no custom token, or with custom token if provided.
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await window.firebase.signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await window.firebase.signInAnonymously(auth);
+                }
+
+                // Get the user ID after authentication. Use a random UUID if anonymous for consistency.
+                userId = auth.currentUser?.uid || crypto.randomUUID();
+
+                // Define the document reference for the counter in Firestore.
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const counterDocRef = window.firebase.doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'fichaCounter');
+
+                let newFichaNumber;
+
+                // Run a Firestore transaction to safely increment the counter.
+                // This ensures that even if multiple users access at the same time,
+                // the counter is updated correctly without race conditions.
+                await window.firebase.runTransaction(db, async (transaction) => {
+                    const docSnapshot = await transaction.get(counterDocRef);
+
+                    if (!docSnapshot.exists()) {
+                        // If the counter document doesn't exist, initialize it to 1.
+                        newFichaNumber = 1;
+                        transaction.set(counterDocRef, { value: newFichaNumber });
+                    } else {
+                        // If it exists, increment its current value.
+                        newFichaNumber = docSnapshot.data().value + 1;
+                        transaction.update(counterDocRef, { value: newFichaNumber });
+                    }
+                });
+
+                // Format the ficha number with leading zeros (e.g., 01, 02).
+                const formattedFichaNumber = newFichaNumber.toString().padStart(2, '0');
+                // Update the display in the HTML.
+                fichaNumberDisplay.textContent = `Ficha N° ${formattedFichaNumber}`;
+                // Store the formatted number globally for use in PDF filename.
+                window.currentFichaNumber = formattedFichaNumber;
+
+            } catch (error) {
+                console.error("Error al inicializar Firebase o cargar el número de ficha:", error);
+                // Display a more specific error message on the UI
+                let errorMessage = `Error: No se pudo cargar la ficha.`;
+                if (error.code) { // Firebase specific error codes
+                    errorMessage = `Error (${error.code}): No se pudo cargar la ficha.`;
+                }
+                if (error.message.includes("Firebase configuration is missing")) {
+                    errorMessage = "Error: Configuración de Firebase faltante o inválida.";
+                } else if (error.code === 'permission-denied') {
+                    errorMessage = `Error: Permiso denegado para cargar la ficha.`;
+                }
+                fichaNumberDisplay.textContent = errorMessage;
+            }
+        }
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Call the Firebase initialization and ficha loading function when the DOM is ready.
+            initializeFirebaseAndLoadFicha();
+
+            const savePdfBtn = document.getElementById('savePdfBtn');
+
+            // Event listener for the "Save as PDF" button
+            savePdfBtn.addEventListener('click', () => {
+                console.log('Botón "Guardar como PDF" clickeado. Iniciando generación de PDF...');
+                const element = document.querySelector('.form-container'); // Selecciona el contenedor principal del formulario
+                const options = {
+                    margin: 10,
+                    filename: `Formulario_Emaus_Ficha_${window.currentFichaNumber || 'XXXX'}.pdf`, // Nombre del archivo PDF con el número de ficha
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true }, // Mayor escala para mejor calidad, useCORS para imágenes externas
+                    jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+                };
+
+                try {
+                    html2pdf().set(options).from(element).save();
+                    console.log('PDF debería haberse guardado.');
+                } catch (error) {
+                    console.error('Error al guardar el PDF:', error);
+                    // Aquí podrías mostrar un mensaje en el UI al usuario si lo deseas
+                }
+            });
+        });
+    </script>
+</body>
+</html>
