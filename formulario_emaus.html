@@ -8,29 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- html2pdf.js CDN for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-    <!-- Firebase SDKs -->
-    <script type="module">
-        // Import Firebase modules directly
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Expose Firebase objects globally for this script to use, or use a structured approach
-        window.firebase = {
-            initializeApp,
-            getAuth,
-            signInAnonymously,
-            signInWithCustomToken,
-            onAuthStateChanged,
-            getFirestore,
-            doc,
-            getDoc,
-            setDoc,
-            updateDoc,
-            collection,
-            runTransaction
-        };
-    </script>
     <style>
         /* Custom styles for handwritten lines if printed */
         .handwritten-line {
@@ -123,8 +100,8 @@
             <h1 class="text-3xl font-bold text-gray-800 mb-2">IV Retiro Penitenciario Emaús Hombres</h1>
             <p class="text-xl text-gray-600 mb-1">CCR 11 San Pedro de Macorís, RD</p>
             <p class="text-xl font-semibold text-gray-700 mb-4">26, 27 y 28 DE SEPTIEMBRE DEL AÑO 2025</p>
-            <!-- Ficha Number Display -->
-            <p id="fichaNumberDisplay" class="text-lg text-gray-500 float-right">Cargando Ficha N°...</p>
+            <!-- Static Ficha Number Display -->
+            <p id="fichaNumberDisplay" class="text-lg text-gray-500 float-right">Ficha N° 01</p>
             <div class="clear-both"></div>
         </div>
 
@@ -309,112 +286,19 @@
     </div>
 
     <script>
-        // Firebase setup and Ficha Number Logic
-        let app;
-        let db;
-        let auth;
-        let userId;
-        window.currentFichaNumber = '00'; // Default or loading state
-
-        /**
-         * Initializes Firebase and loads/increments the ficha number.
-         * Uses a Firestore transaction to ensure atomic increment for unique ficha numbers.
-         */
-        async function initializeFirebaseAndLoadFicha() {
-            const fichaNumberDisplay = document.getElementById('fichaNumberDisplay');
-            fichaNumberDisplay.textContent = 'Cargando Ficha N°...'; // Ensure loading state is visible initially
-
-            try {
-                // Ensure __firebase_config is a valid JSON string before parsing
-                const rawFirebaseConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
-                const firebaseConfig = JSON.parse(rawFirebaseConfig);
-
-                // Basic validation for firebaseConfig to ensure it's not just an empty object from a failed parse
-                if (Object.keys(firebaseConfig).length === 0) {
-                    throw new Error("Firebase configuration is missing or empty. Please ensure __firebase_config is properly set.");
-                }
-
-                // Initialize Firebase app if not already initialized
-                // This check is important to prevent re-initializing the app which can cause errors.
-                if (!app) {
-                    app = window.firebase.initializeApp(firebaseConfig);
-                    db = window.firebase.getFirestore(app);
-                    auth = window.firebase.getAuth(app);
-                }
-
-
-                // Sign in anonymously if no custom token, or with custom token if provided.
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await window.firebase.signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await window.firebase.signInAnonymously(auth);
-                }
-
-                // Get the user ID after authentication. Use a random UUID if anonymous for consistency.
-                userId = auth.currentUser?.uid || crypto.randomUUID();
-
-                // Define the document reference for the counter in Firestore.
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const counterDocRef = window.firebase.doc(db, 'artifacts', appId, 'public', 'data', 'counters', 'fichaCounter');
-
-                let newFichaNumber;
-
-                // Run a Firestore transaction to safely increment the counter.
-                // This ensures that even if multiple users access at the same time,
-                // the counter is updated correctly without race conditions.
-                await window.firebase.runTransaction(db, async (transaction) => {
-                    const docSnapshot = await transaction.get(counterDocRef);
-
-                    if (!docSnapshot.exists()) {
-                        // If the counter document doesn't exist, initialize it to 1.
-                        newFichaNumber = 1;
-                        transaction.set(counterDocRef, { value: newFichaNumber });
-                    } else {
-                        // If it exists, increment its current value.
-                        newFichaNumber = docSnapshot.data().value + 1;
-                        transaction.update(counterDocRef, { value: newFichaNumber });
-                    }
-                });
-
-                // Format the ficha number with leading zeros (e.g., 01, 02).
-                const formattedFichaNumber = newFichaNumber.toString().padStart(2, '0');
-                // Update the display in the HTML.
-                fichaNumberDisplay.textContent = `Ficha N° ${formattedFichaNumber}`;
-                // Store the formatted number globally for use in PDF filename.
-                window.currentFichaNumber = formattedFichaNumber;
-
-            } catch (error) {
-                console.error("Error al inicializar Firebase o cargar el número de ficha:", error);
-                // Display a more specific error message on the UI
-                let errorMessage = `Error: No se pudo cargar la ficha.`;
-                if (error.code) { // Firebase specific error codes
-                    errorMessage = `Error (${error.code}): No se pudo cargar la ficha.`;
-                }
-                if (error.message.includes("Firebase configuration is missing")) {
-                    errorMessage = "Error: Configuración de Firebase faltante o inválida.";
-                } else if (error.code === 'permission-denied') {
-                    errorMessage = `Error: Permiso denegado para cargar la ficha.`;
-                }
-                fichaNumberDisplay.textContent = errorMessage;
-            }
-        }
-
-
         document.addEventListener('DOMContentLoaded', function() {
-            // Call the Firebase initialization and ficha loading function when the DOM is ready.
-            initializeFirebaseAndLoadFicha();
-
             const savePdfBtn = document.getElementById('savePdfBtn');
 
             // Event listener for the "Save as PDF" button
             savePdfBtn.addEventListener('click', () => {
                 console.log('Botón "Guardar como PDF" clickeado. Iniciando generación de PDF...');
-                const element = document.querySelector('.form-container'); // Selecciona el contenedor principal del formulario
+                const element = document.querySelector('.form-container'); // Select the main form container
                 const options = {
                     margin: 10,
-                    filename: `Formulario_Emaus_Ficha_${window.currentFichaNumber || 'XXXX'}.pdf`, // Nombre del archivo PDF con el número de ficha
+                    // Filename will now be static
+                    filename: 'Formulario_Emaus_Ficha_01.pdf', 
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true }, // Mayor escala para mejor calidad, useCORS para imágenes externas
+                    html2canvas: { scale: 2, useCORS: true }, // Increased scale for better quality, useCORS for external images
                     jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
                 };
 
@@ -423,7 +307,7 @@
                     console.log('PDF debería haberse guardado.');
                 } catch (error) {
                     console.error('Error al guardar el PDF:', error);
-                    // Aquí podrías mostrar un mensaje en el UI al usuario si lo deseas
+                    // You might display a message in the UI to the user if you wish
                 }
             });
         });
